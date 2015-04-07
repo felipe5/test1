@@ -39,12 +39,10 @@ KeyboardInputManager.prototype.listen = function () {
     39: 1, // Right
     40: 2, // Down
     37: 3, // Left
-    
     75: 0, // Vim up
     76: 1, // Vim right
     74: 2, // Vim down
     72: 3, // Vim left
-
     87: 0, // W
     68: 1, // D
     83: 2, // S
@@ -52,10 +50,13 @@ KeyboardInputManager.prototype.listen = function () {
   };
 
   // Respond to direction keys
-  var foo = document.addEventListener("keydown", function (event) {
+  document.addEventListener("keydown", function (event) {
     var modifiers = event.altKey || event.ctrlKey || event.metaKey ||
                     event.shiftKey;
     var mapped    = map[event.which];
+
+    // Ignore the event if it's happening in a text field
+    if (self.targetIsInput(event)) return;
 
     if (!modifiers) {
       if (mapped !== undefined) {
@@ -69,10 +70,6 @@ KeyboardInputManager.prototype.listen = function () {
       self.restart.call(self, event);
     }
   });
-  
-
-
-
 
   // Respond to button presses
   this.bindButtonPress(".retry-button", this.restart);
@@ -85,8 +82,9 @@ KeyboardInputManager.prototype.listen = function () {
 
   gameContainer.addEventListener(this.eventTouchstart, function (event) {
     if ((!window.navigator.msPointerEnabled && event.touches.length > 1) ||
-        event.targetTouches > 1) {
-      return; // Ignore if touching with more than 1 finger
+        event.targetTouches > 1 ||
+        self.targetIsInput(event)) {
+      return; // Ignore if touching with more than 1 finger or touching input
     }
 
     if (window.navigator.msPointerEnabled) {
@@ -106,8 +104,9 @@ KeyboardInputManager.prototype.listen = function () {
 
   gameContainer.addEventListener(this.eventTouchend, function (event) {
     if ((!window.navigator.msPointerEnabled && event.touches.length > 0) ||
-        event.targetTouches > 0) {
-      return; // Ignore if still touching with one or more fingers
+        event.targetTouches > 0 ||
+        self.targetIsInput(event)) {
+      return; // Ignore if still touching with one or more fingers or input
     }
 
     var touchEndClientX, touchEndClientY;
@@ -134,21 +133,9 @@ KeyboardInputManager.prototype.listen = function () {
 };
 
 KeyboardInputManager.prototype.restart = function (event) {
-        event.preventDefault();
-        this.emit("restart");   
-}
-
-function sleep(milliseconds) {
-  var start = new Date().getTime();
-
-  for (var i = 0; i < 1e7; i++) {
-    if ((new Date().getTime() - start) > milliseconds){
-      console.log("milliseconds: "+i);
-      break;
-    }
-  }
-}
-
+  event.preventDefault();
+  this.emit("restart");
+};
 
 KeyboardInputManager.prototype.keepPlaying = function (event) {
   event.preventDefault();
@@ -159,4 +146,8 @@ KeyboardInputManager.prototype.bindButtonPress = function (selector, fn) {
   var button = document.querySelector(selector);
   button.addEventListener("click", fn.bind(this));
   button.addEventListener(this.eventTouchend, fn.bind(this));
+};
+
+KeyboardInputManager.prototype.targetIsInput = function (event) {
+  return event.target.tagName.toLowerCase() === "input";
 };
