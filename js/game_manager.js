@@ -1,13 +1,15 @@
+//preuab
+
 function GameManager(size, InputManager, Actuator, StorageManager) {
   this.size           = size; // Size of the grid
   this.inputManager   = new InputManager;
   this.storageManager = new StorageManager;
   this.actuator       = new Actuator;
-
+  i=0;
   this.startTiles     = 2;
 
   this.inputManager.on("move", this.move.bind(this));
-  this.inputManager.on("restart", this.restart.bind(this));
+  this.inputManager.on("restart", this.restart.bind(this));/////////////////////////////////////////////////////////////////////////////////////////////////
   this.inputManager.on("keepPlaying", this.keepPlaying.bind(this));
 
   this.setup();
@@ -17,8 +19,11 @@ function GameManager(size, InputManager, Actuator, StorageManager) {
 GameManager.prototype.restart = function () {
   this.storageManager.clearGameState();
   this.actuator.continueGame(); // Clear the game won/lost message
+  document.getElementById("autoplay").style.display = 'block';//para que cuando ponga reintentar vuelva a parecer el boton de autoplay
+  document.getElementById("restart").style.display = 'block';
   this.setup();
 };
+
 
 // Keep playing after winning (allows going over 2048)
 GameManager.prototype.keepPlaying = function () {
@@ -128,6 +133,7 @@ GameManager.prototype.moveTile = function (tile, cell) {
 
 // Move tiles on the grid in the specified direction
 GameManager.prototype.move = function (direction) {
+  
   // 0: up, 1: right, 2: down, 3: left
   var self = this;
 
@@ -136,8 +142,12 @@ GameManager.prototype.move = function (direction) {
   var cell, tile;
 
   var vector     = this.getVector(direction);
+
+
+
   var traversals = this.buildTraversals(vector);
   var moved      = false;
+
 
   // Save the current tile positions and remove merger information
   this.prepareTiles();
@@ -185,10 +195,39 @@ GameManager.prototype.move = function (direction) {
     if (!this.movesAvailable()) {
       this.over = true; // Game over!
     }
-
     this.actuate();
   }
 };
+
+GameManager.prototype.autoPlay = function(dir) {
+  var direccion = dir;
+  switch(direccion){//para saber los movimientos que ocurren
+    case 0:
+      console.log("↑");
+      break;
+    case 1:
+      console.log("→");
+      break;
+    case 2:
+      console.log("↓");
+      break;
+    case 3:
+      console.log("←");
+      break;
+  }
+  if(direccion==4){
+    direccion=0;
+  }
+  this.move(direccion);//se envia la direccion a la funcion que mueve las tiles
+  var timeout = 100;//tiempo que espero, es como un sleep
+  if (!this.over && !this.won) {//para que siga jugando hasta ganar o perder
+    var self = this;//
+    setTimeout(function(){
+      direccion++;
+      self.autoPlay(direccion);//self por que si no pesca el this de afuera
+    }, timeout);//delay de movimientos
+  }
+}
 
 // Get the vector representing the chosen direction
 GameManager.prototype.getVector = function (direction) {
